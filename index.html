@@ -20,10 +20,8 @@
     .equipment-list { margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
     .equipment-option { display: flex; align-items: center; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; transition: background 0.2s; }
     .equipment-option:hover { background: #f0fdf4; }
-    .equipment-option.selected { background: #eef9f2; border-color: #06C755; }
     .equipment-option input[type="checkbox"] { margin-right: 10px; width: auto; }
     .equipment-option label { margin-bottom: 0; font-weight: normal; color: #333; cursor: pointer; flex: 1; }
-    .equipment-option label span { font-size: 13px; color: #666; display: block; }
     #other-equipment-input-group { margin-top: 10px; margin-bottom: 0; }
     .hidden { display: none; }
   </style>
@@ -54,39 +52,39 @@
       <input type="email" id="email" required placeholder="example@gmail.com">
     </div>
 
-    <!-- 新增：裝備租借複選題 (直接在 HTML 中定義) -->
     <div class="form-group">
       <label>需要租借哪些裝備(防寒衣汰換中租金改為200)</label>
       <div id="equipment-options" class="equipment-list">
-        <div class="equipment-option" id="opt-no">
+        <div class="equipment-option">
           <input type="checkbox" id="equip_no" value="否">
           <label for="equip_no">否</label>
         </div>
-        <div class="equipment-option" id="opt-1">
+        <div class="equipment-option">
           <input type="checkbox" id="equip_1" value="面鏡呼吸管 (NT100)">
           <label for="equip_1">面鏡呼吸管 (NT100)</label>
         </div>
-        <div class="equipment-option" id="opt-2">
-          <input type="checkbox" id="equip_2" value="長蛙鞋 - 於其他選項欄留下尺寸 (NT200)">
-          <label for="equip_2">長蛙鞋 - 於其他選項欄留下尺寸 (NT200)</label>
+        <div class="equipment-option">
+          <input type="checkbox" id="equip_2" class="need-size" value="長蛙鞋 (NT200)">
+          <label for="equip_2">長蛙鞋 - 於下方填寫尺寸 (NT200)</label>
         </div>
-        <div class="equipment-option" id="opt-3">
-          <input type="checkbox" id="equip_3" value="防寒衣配重帶 - 於其他選項欄留下身高體重 (NT200)">
-          <label for="equip_3">防寒衣配重帶 - 於其他選項欄留下身高體重 (NT200)</label>
+        <div class="equipment-option">
+          <input type="checkbox" id="equip_3" class="need-size" value="防寒衣配重帶 (NT200)">
+          <label for="equip_3">防寒衣配重帶 - 於下方填寫身高體重 (NT200)</label>
         </div>
-        <div class="equipment-option" id="opt-4">
+        <div class="equipment-option">
           <input type="checkbox" id="equip_4" value="全套裝備 (NT500)">
           <label for="equip_4">全套裝備 (NT500)</label>
         </div>
-        <div class="equipment-option" id="opt-other">
-          <input type="checkbox" id="equip_other" value="其他">
+        <div class="equipment-option">
+          <input type="checkbox" id="equip_other" class="need-size" value="其他">
           <label for="equip_other">其他</label>
         </div>
       </div>
-      <!-- 用於「其他」輸入的隱藏文本欄位 -->
+
+      <!-- 尺寸/身高體重輸入欄位 -->
       <div id="other-equipment-input-group" class="form-group hidden">
-        <label>其他(請填寫尺寸或身高體重)</label>
-        <input type="text" id="other_equipment_text" placeholder="如：蛙鞋40碼/防寒衣M號">
+        <label style="color: #06C755;">請填寫租借尺寸 / 身高體重</label>
+        <input type="text" id="other_equipment_text" placeholder="例：蛙鞋40碼 / 身高175體重70">
       </div>
     </div>
 
@@ -95,7 +93,6 @@
 </div>
 
 <script>
-  // 替換為你的設定
   const LIFF_ID = "2012301088-rfXIxZuy"; 
   const GAS_URL = "https://script.google.com/macros/s/AKfycbyPwMTZJZra6OtgN0kC3Z7fndhSzXxJOBeqGu4EgwBal9I_uy0-u8odlA4zkkKsiY16/exec"; 
 
@@ -111,71 +108,73 @@
         liff.login();
       }
     } catch (err) {
-      document.getElementById('user-info').innerText = `LIFF 初始化失敗或在外部瀏覽器開啟：${err.message}`;
+      document.getElementById('user-info').innerText = `LIFF 初始化失敗：${err.message}`;
     }
   }
 
   initLIFF();
 
-  // 處理裝備複選框邏輯
+  // 互動邏輯控制
   const equipNo = document.getElementById('equip_no');
-  const equipOther = document.getElementById('equip_other');
   const otherInputGroup = document.getElementById('other-equipment-input-group');
   const otherInputText = document.getElementById('other_equipment_text');
-  const otherCheckboxes = document.querySelectorAll('#equipment-options input[type="checkbox"]:not(#equip_no)');
+  const allCheckboxes = document.querySelectorAll('#equipment-options input[type="checkbox"]');
+  const sizeCheckboxes = document.querySelectorAll('.need-size');
 
+  // 切換「否」互斥狀態
   equipNo.addEventListener('change', function() {
     if (this.checked) {
-      // 如果選擇「否」，則取消選擇所有其他裝備並禁用
-      otherCheckboxes.forEach(cb => {
-        cb.checked = false;
-        cb.disabled = true;
-        // 同步取消其他隱藏輸入框
-        otherInputGroup.classList.add('hidden');
-        otherInputText.value = '';
+      allCheckboxes.forEach(cb => {
+        if (cb !== equipNo) {
+          cb.checked = false;
+          cb.disabled = true;
+        }
       });
+      otherInputGroup.classList.add('hidden');
+      otherInputText.value = '';
     } else {
-      // 取消選擇「否」，重新啟用其他裝備
-      otherCheckboxes.forEach(cb => {
-        cb.disabled = false;
-      });
+      allCheckboxes.forEach(cb => cb.disabled = false);
     }
   });
 
-  equipOther.addEventListener('change', function() {
-    // 只有在選中「其他」時才顯示文本輸入框
-    if (this.checked) {
+  // 自動判斷是否需要展開尺寸輸入框
+  function checkNeedSizeInput() {
+    let needSize = false;
+    sizeCheckboxes.forEach(cb => {
+      if (cb.checked) needSize = true;
+    });
+
+    if (needSize) {
       otherInputGroup.classList.remove('hidden');
     } else {
       otherInputGroup.classList.add('hidden');
-      otherInputText.value = ''; // 清空輸入
+      otherInputText.value = '';
     }
+  }
+
+  sizeCheckboxes.forEach(cb => {
+    cb.addEventListener('change', checkNeedSizeInput);
   });
 
+  // 表單提交
   document.getElementById('bookingForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;
     btn.innerText = "資料送出中...";
 
-    // 收集選中的裝備
     let selectedEquipment = [];
-    const checkboxes = document.querySelectorAll('#equipment-options input[type="checkbox"]');
-    checkboxes.forEach(cb => {
+    allCheckboxes.forEach(cb => {
       if (cb.checked) {
-        let val = cb.value;
-        if (val === '其他') {
-          // 如果選中「其他」，則附加文本輸入
-          const otherText = document.getElementById('other_equipment_text').value;
-          if (otherText) {
-            val += ` (${otherText})`;
-          } else {
-            val += ' (未填寫尺寸/身高體重)';
-          }
-        }
-        selectedEquipment.push(val);
+        selectedEquipment.push(cb.value);
       }
     });
+
+    // 若有填寫備註尺寸，將備註附在最後
+    const extraDetails = otherInputText.value.trim();
+    if (extraDetails) {
+      selectedEquipment.push(`[備註資訊: ${extraDetails}]`);
+    }
 
     const payload = {
       userId: userProfile.userId,
@@ -183,23 +182,26 @@
       item: document.getElementById('item').value,
       name: document.getElementById('name').value,
       email: document.getElementById('email').value,
-      equipment: selectedEquipment.join(', ') // 將數組串聯成字符串
+      equipment: selectedEquipment.length > 0 ? selectedEquipment.join(', ') : '未選擇'
     };
 
-    // 發送資料至 GAS API
+    // 發送至 GAS (帶有完整 CORS header)
     fetch(GAS_URL, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
       body: JSON.stringify(payload)
     })
     .then(res => res.json())
     .then(data => {
       alert('預約成功！');
       if (liff.isInClient()) {
-        liff.closeWindow(); // 若在 LINE 內開則自動關閉
+        liff.closeWindow();
       }
     })
     .catch(err => {
-      alert('送出失敗，請重試：' + err);
+      alert('送出失敗：' + err);
       btn.disabled = false;
       btn.innerText = "送出報名";
     });
