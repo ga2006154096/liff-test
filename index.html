@@ -3,23 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TanningFace 報名測試(更新版)</title>
-  <!-- 載入 LINE LIFF SDK -->
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <title>TanningFace 預約報名</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background-color: #f7f9fa; }
     .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
-    h2 { margin-top: 0; color: #333; }
+    h2 { margin-top: 0; color: #333; text-align: center; }
     .form-group { margin-bottom: 15px; }
     label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
     input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
     button { width: 100%; padding: 12px; background-color: #06C755; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
     button:disabled { background-color: #ccc; }
-    #user-info { font-size: 13px; color: #666; background: #eef9f2; padding: 8px; border-radius: 6px; margin-bottom: 15px; }
-    /* 裝備複選框樣式 */
     .equipment-list { margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-    .equipment-option { display: flex; align-items: center; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; transition: background 0.2s; }
-    .equipment-option:hover { background: #f0fdf4; }
+    .equipment-option { display: flex; align-items: center; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer; }
     .equipment-option input[type="checkbox"] { margin-right: 10px; width: auto; }
     .equipment-option label { margin-bottom: 0; font-weight: normal; color: #333; cursor: pointer; flex: 1; }
     #other-equipment-input-group { margin-top: 10px; margin-bottom: 0; }
@@ -29,12 +24,11 @@
 <body>
 
 <div class="card">
-  <h2>潛水練習報名測試</h2>
-  <div id="user-info">載入用戶資料中...</div>
+  <h2>潛水練習預約報名</h2>
 
   <form id="bookingForm">
     <div class="form-group">
-      <label>預約項目</label>
+      <label>預約項目 *</label>
       <select id="item" required>
         <option value="">-- 請選擇 --</option>
         <option value="大武崙 15m 團練">大武崙 15m 團練</option>
@@ -43,12 +37,17 @@
     </div>
 
     <div class="form-group">
-      <label>學員姓名</label>
-      <input type="text" id="name" required placeholder="請輸入中文姓名">
+      <label>學員姓名 *</label>
+      <input type="text" id="name" required placeholder="請輸入姓名">
     </div>
 
     <div class="form-group">
-      <label>電子郵件</label>
+      <label>聯絡電話 *</label>
+      <input type="tel" id="phone" required placeholder="0912345678">
+    </div>
+
+    <div class="form-group">
+      <label>電子郵件 *</label>
       <input type="email" id="email" required placeholder="example@gmail.com">
     </div>
 
@@ -81,7 +80,6 @@
         </div>
       </div>
 
-      <!-- 尺寸/身高體重輸入欄位 -->
       <div id="other-equipment-input-group" class="form-group hidden">
         <label style="color: #06C755;">請填寫租借尺寸 / 身高體重</label>
         <input type="text" id="other_equipment_text" placeholder="例：蛙鞋40碼 / 身高175體重70">
@@ -93,35 +91,16 @@
 </div>
 
 <script>
-  const LIFF_ID = "2012301088-rfXIxZuy"; 
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbxUBBh5JX8oaIuNrfUvtqmZn7ngQI8vAJLl0xAIaSL1TcMKuMiO90B_JTqYULrvhnc/exec"; 
+  // 請填入你的 GAS Web App API 網址
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbyPwMTZJZra6OtgN0kC3Z7fndhSzXxJOBeqGu4EgwBal9I_uy0-u8odlA4zkkKsiY16/exec"; 
 
-  let userProfile = { userId: '', displayName: '' };
-
-  async function initLIFF() {
-    try {
-      await liff.init({ liffId: LIFF_ID });
-      if (liff.isLoggedIn()) {
-        userProfile = await liff.getProfile();
-        document.getElementById('user-info').innerText = `已綁定 LINE：${userProfile.displayName}`;
-      } else {
-        liff.login();
-      }
-    } catch (err) {
-      document.getElementById('user-info').innerText = `LIFF 初始化失敗：${err.message}`;
-    }
-  }
-
-  initLIFF();
-
-  // 互動邏輯控制
   const equipNo = document.getElementById('equip_no');
   const otherInputGroup = document.getElementById('other-equipment-input-group');
   const otherInputText = document.getElementById('other_equipment_text');
   const allCheckboxes = document.querySelectorAll('#equipment-options input[type="checkbox"]');
   const sizeCheckboxes = document.querySelectorAll('.need-size');
 
-  // 切換「否」互斥狀態
+  // 「否」互斥邏輯
   equipNo.addEventListener('change', function() {
     if (this.checked) {
       allCheckboxes.forEach(cb => {
@@ -137,26 +116,20 @@
     }
   });
 
-  // 自動判斷是否需要展開尺寸輸入框
-  function checkNeedSizeInput() {
-    let needSize = false;
-    sizeCheckboxes.forEach(cb => {
-      if (cb.checked) needSize = true;
-    });
-
-    if (needSize) {
-      otherInputGroup.classList.remove('hidden');
-    } else {
-      otherInputGroup.classList.add('hidden');
-      otherInputText.value = '';
-    }
-  }
-
+  // 自動展開備註欄位
   sizeCheckboxes.forEach(cb => {
-    cb.addEventListener('change', checkNeedSizeInput);
+    cb.addEventListener('change', function() {
+      let needSize = Array.from(sizeCheckboxes).some(c => c.checked);
+      if (needSize) {
+        otherInputGroup.classList.remove('hidden');
+      } else {
+        otherInputGroup.classList.add('hidden');
+        otherInputText.value = '';
+      }
+    });
   });
 
-  // 表單提交
+  // 表單送出
   document.getElementById('bookingForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const btn = document.getElementById('submitBtn');
@@ -165,40 +138,35 @@
 
     let selectedEquipment = [];
     allCheckboxes.forEach(cb => {
-      if (cb.checked) {
-        selectedEquipment.push(cb.value);
-      }
+      if (cb.checked) selectedEquipment.push(cb.value);
     });
 
-    // 若有填寫備註尺寸，將備註附在最後
     const extraDetails = otherInputText.value.trim();
     if (extraDetails) {
       selectedEquipment.push(`[備註資訊: ${extraDetails}]`);
     }
 
     const payload = {
-      userId: userProfile.userId,
-      displayName: userProfile.displayName,
       item: document.getElementById('item').value,
       name: document.getElementById('name').value,
+      phone: document.getElementById('phone').value,
       email: document.getElementById('email').value,
       equipment: selectedEquipment.length > 0 ? selectedEquipment.join(', ') : '未選擇'
     };
 
-    // 發送至 GAS (帶有完整 CORS header)
     fetch(GAS_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
-      },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     })
     .then(res => res.json())
     .then(data => {
       alert('預約成功！');
-      if (liff.isInClient()) {
-        liff.closeWindow();
-      }
+      document.getElementById('bookingForm').reset();
+      btn.disabled = false;
+      btn.innerText = "送出報名";
+      otherInputGroup.classList.add('hidden');
+      allCheckboxes.forEach(cb => cb.disabled = false);
     })
     .catch(err => {
       alert('送出失敗：' + err);
